@@ -63,6 +63,8 @@ namespace KitchenSceneTao
             Scene.DrawPlates();
             Scene.DrawBed();
             Scene.DrawChandelier();
+            Scene.DrawGlass();
+            Scene.DrawRugWithTree();
 
             glControl.Invalidate();
         }
@@ -76,8 +78,8 @@ namespace KitchenSceneTao
             {
                 case Keys.W: camX += dx; camZ += dz; break;
                 case Keys.S: camX -= dx; camZ -= dz; break;
-                case Keys.A: camX -= dz; camZ += dx; break;
-                case Keys.D: camX += dz; camZ -= dx; break;
+                case Keys.D: camX -= dz; camZ += dx; break;
+                case Keys.A: camX += dz; camZ -= dx; break;
                 case Keys.Q: camY -= moveSpeed; break;
                 case Keys.E: camY += moveSpeed; break;
             }
