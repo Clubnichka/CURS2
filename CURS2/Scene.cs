@@ -75,13 +75,30 @@ namespace KitchenSceneTao
             Gl.glPopMatrix();
         }
 
-        public static void DrawPlates()
+        public static void DrawPlate()
         {
-            Gl.glColor3f(1f, 1f, 1f);
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, 1.05f, 0);
+            Gl.glTranslatef(0, 1.1f, 0);
             Gl.glRotatef(-90, 1, 0, 0);
-            Glut.glutSolidTorus(0.05f, 0.2f, 16, 32);
+
+            // Цвет фарфора
+            Gl.glColor3f(1f, 1f, 1f);
+
+            // Наружный обод (тор)
+            Glut.glutSolidTorus(0.02f, 0.2f, 16, 32);
+
+            // Дно (тонкий диск)
+            Gl.glBegin(Gl.GL_TRIANGLE_FAN);
+            Gl.glVertex3f(0, 0, 0); // центр
+            for (int i = 0; i <= 32; i++)
+            {
+                float angle = (float)(2 * Math.PI * i / 32);
+                float x = 0.18f * (float)Math.Cos(angle);
+                float y = 0.18f * (float)Math.Sin(angle);
+                Gl.glVertex3f(x, y, 0);
+            }
+            Gl.glEnd();
+
             Gl.glPopMatrix();
         }
 
@@ -185,32 +202,48 @@ namespace KitchenSceneTao
         }
         public static void DrawGlass()
         {
-            Gl.glColor3f(0.6f, 0.8f, 1.0f); // светло-голубой
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glEnable(Gl.GL_CULL_FACE);               // <--- вот это
+            Gl.glCullFace(Gl.GL_BACK);
+            Gl.glColor4f(0.6f, 0.8f, 1.0f, 0.4f); // полупрозрачный цвет
+
             Gl.glPushMatrix();
-            Gl.glTranslatef(0.5f, 1.05f, 0); // на столе
+            Gl.glTranslatef(0.5f, 1.05f, 0);
             DrawHermiteSurface();
             Gl.glPopMatrix();
+            Gl.glDisable(Gl.GL_CULL_FACE);
+            Gl.glDisable(Gl.GL_BLEND);
         }
 
         private static void DrawHermiteSurface()
         {
             int slices = 32, stacks = 16;
+            float height = 0.6f;
 
             for (int i = 0; i < stacks; i++)
             {
                 float t1 = (float)i / stacks;
                 float t2 = (float)(i + 1) / stacks;
-                float y1 = t1 * 0.6f, y2 = t2 * 0.6f;
-                float r1 = HermiteRadius(t1), r2 = HermiteRadius(t2);
+
+                float y1 = t1 * height;
+                float y2 = t2 * height;
+
+                float r1 = HermiteRadius(t1);
+                float r2 = HermiteRadius(t2);
 
                 Gl.glBegin(Gl.GL_QUAD_STRIP);
                 for (int j = 0; j <= slices; j++)
                 {
                     float angle = (float)(2 * Math.PI * j / slices);
-                    float cos = (float)Math.Cos(angle), sin = (float)Math.Sin(angle);
+                    float x1 = r1 * (float)Math.Cos(angle);
+                    float z1 = r1 * (float)Math.Sin(angle);
 
-                    Gl.glVertex3f(r1 * cos, y1, r1 * sin);
-                    Gl.glVertex3f(r2 * cos, y2, r2 * sin);
+                    float x2 = r2 * (float)Math.Cos(angle);
+                    float z2 = r2 * (float)Math.Sin(angle);
+
+                    Gl.glVertex3f(x1, y1, z1);
+                    Gl.glVertex3f(x2, y2, z2);
                 }
                 Gl.glEnd();
             }
@@ -310,15 +343,83 @@ namespace KitchenSceneTao
 
         public static void DrawChandelier()
         {
-            Gl.glColor3f(1.0f, 1.0f, 0.8f);
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, 2.8f, 0);
+            Gl.glTranslatef(0, 2.8f, 0); // Почти под потолком
 
+            // Вертикальный стержень крепления к потолку
+            Gl.glColor3f(0.8f, 0.8f, 0.6f);
+            Gl.glPushMatrix();
+            Gl.glScalef(0.05f, 0.3f, 0.05f);
+            Glut.glutSolidCube(1);
+            Gl.glPopMatrix();
+
+            // Горизонтальные перекладины
+            DrawRod(-0.4f, 0, -0.3f, 0.4f, 0, -0.3f);
+            DrawRod(0.4f, 0, -0.3f, 0.0f, 0, 0.4f);
+            DrawRod(0.0f, 0, 0.4f, -0.4f, 0, -0.3f);
+
+            // Сами лампы
+            Gl.glColor3f(1.0f, 1.0f, 0.8f);
             DrawLamp(-0.4f, -0.3f);
             DrawLamp(0.4f, -0.3f);
             DrawLamp(0.0f, 0.4f);
 
             Gl.glPopMatrix();
+        }
+
+        private static void DrawRod(float x1, float y1, float z1, float x2, float y2, float z2)
+        {
+            Gl.glPushMatrix();
+
+            // Центр между точками
+            float cx = (x1 + x2) / 2;
+            float cy = (y1 + y2) / 2;
+            float cz = (z1 + z2) / 2;
+            Gl.glTranslatef(cx, cy, cz);
+
+            // Вектор направления
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float dz = z2 - z1;
+            float length = (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+
+            // Вычисляем угол поворота и ось (с помощью кросс-продукта)
+            float[] dir = { dx, dy, dz };
+            Normalize(ref dir);
+            float[] defaultDir = { 0, -1, 0 }; // по умолчанию "вниз"
+            float[] axis = Cross(defaultDir, dir);
+            float angle = (float)(Math.Acos(Dot(defaultDir, dir)) * 180.0 / Math.PI);
+
+            if (axis[0] != 0 || axis[1] != 0 || axis[2] != 0)
+                Gl.glRotatef(angle, axis[0], axis[1], axis[2]);
+
+            // Рисуем стержень — удлинённый цилиндр
+            Gl.glScalef(0.03f, length / 2, 0.03f);
+            Glut.glutSolidCube(1);
+
+            Gl.glPopMatrix();
+        }
+
+        private static void Normalize(ref float[] v)
+        {
+            float len = (float)Math.Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+            if (len == 0) return;
+            v[0] /= len; v[1] /= len; v[2] /= len;
+        }
+
+        private static float Dot(float[] a, float[] b)
+        {
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+        }
+
+        private static float[] Cross(float[] a, float[] b)
+        {
+            return new float[]
+            {
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0]
+            };
         }
 
         private static void DrawLamp(float xOffset, float zOffset)

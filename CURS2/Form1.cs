@@ -49,6 +49,18 @@ namespace KitchenSceneTao
 
         private void RenderScene()
         {
+            //Gl.glEnable(Gl.GL_LIGHTING);
+            //Gl.glEnable(Gl.GL_LIGHT0);
+
+            //float[] lightPos = { 0f, 2.8f, 0f, 1f };
+            //float[] lightAmbient = { 0.2f, 0.2f, 0.2f, 1f };
+            //float[] lightDiffuse = { 1.0f, 1.0f, 0.8f, 1f };
+            //float[] lightSpecular = { 1.0f, 1.0f, 0.8f, 1f };
+
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, lightPos);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_AMBIENT, lightAmbient);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, lightDiffuse);
+            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, lightSpecular);
             Gl.glClear(Gl.GL_COLOR_BUFFER_BIT | Gl.GL_DEPTH_BUFFER_BIT);
             Gl.glLoadIdentity();
 
@@ -60,7 +72,7 @@ namespace KitchenSceneTao
 
             Scene.DrawRoom();
             Scene.DrawTable();
-            Scene.DrawPlates();
+            Scene.DrawPlate();
             Scene.DrawBed();
             Scene.DrawChandelier();
             Scene.DrawGlass();
