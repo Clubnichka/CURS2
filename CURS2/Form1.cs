@@ -16,6 +16,16 @@ namespace KitchenSceneTao
         float mouseSensitivity = 0.2f;
         Point lastMousePos;
         bool isRotating = false;
+        float doorAngle = 0f;
+        bool opening = false;
+        float womanX = 5f, womanZ = -3.5f, womanY = 0;
+        float womanTargetX = 2f;
+        float womanOffset = 0f;
+
+        bool womanEntering = false;
+        float womanStep = 0.02f; // Скорость входа
+        Timer doorTimer = new Timer();
+       
 
         public Form1()
         {
@@ -26,6 +36,27 @@ namespace KitchenSceneTao
             glControl.MouseDown += glControl_MouseDown;
             glControl.MouseUp += glControl_MouseUp;
             glControl.MouseMove += glControl_MouseMove;
+            doorTimer.Interval = 30; // частота обновления (мс)
+            doorTimer.Tick += (s, e) =>
+            {
+                if (doorAngle > -90f)
+                {
+                    doorAngle -= 2f; // скорость открытия
+                    Invalidate(); // перерисовать сцену
+                }
+                else
+                {
+                    doorTimer.Stop();
+                }
+                if (womanEntering && womanX > womanTargetX)
+                {
+                    womanX -= 0.02f;
+                    if (womanX <= womanTargetX)
+                    {
+                        womanEntering = false;
+                    }
+                }
+            };
         }
 
         private void InitializeOpenGLControl()
@@ -74,10 +105,11 @@ namespace KitchenSceneTao
             Scene.DrawTable();
             Scene.DrawPlate();
             Scene.DrawBed();
-            Scene.DrawChandelier();
+            Scene.DrawRealisticChandelier();
             Scene.DrawGlass();
             Scene.DrawRugWithTree();
-
+            Scene.DrawDoor(doorAngle);
+            Scene.DrawWoman(womanX);
             glControl.Invalidate();
         }
 
@@ -105,6 +137,16 @@ namespace KitchenSceneTao
             {
                 isRotating = true;
                 lastMousePos = e.Location;
+            }
+        }
+
+        private void btnOpenDoor_Click(object sender, EventArgs e)
+        {
+            if (!doorTimer.Enabled)
+            {
+                opening = true;
+                womanEntering = true;
+                doorTimer.Start();
             }
         }
 

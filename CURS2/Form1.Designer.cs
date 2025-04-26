@@ -36,6 +36,7 @@ namespace KitchenSceneTao
         private void InitializeComponent()
         {
             this.glControl = new Tao.Platform.Windows.SimpleOpenGlControl();
+            this.btnOpenDoor = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // glControl
@@ -54,11 +55,22 @@ namespace KitchenSceneTao
             this.glControl.StencilBits = ((byte)(0));
             this.glControl.TabIndex = 0;
             // 
+            // btnOpenDoor
+            // 
+            this.btnOpenDoor.Location = new System.Drawing.Point(544, 31);
+            this.btnOpenDoor.Name = "btnOpenDoor";
+            this.btnOpenDoor.Size = new System.Drawing.Size(75, 23);
+            this.btnOpenDoor.TabIndex = 1;
+            this.btnOpenDoor.Text = "Запуск сцены";
+            this.btnOpenDoor.UseVisualStyleBackColor = true;
+            this.btnOpenDoor.Click += new System.EventHandler(this.btnOpenDoor_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.btnOpenDoor);
             this.Controls.Add(this.glControl);
             this.Name = "Form1";
             this.Text = "Form1";
@@ -69,6 +81,7 @@ namespace KitchenSceneTao
         #endregion
 
         private SimpleOpenGlControl glControl;
+        private Button btnOpenDoor;
     }
 }
 

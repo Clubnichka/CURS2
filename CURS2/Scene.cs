@@ -10,6 +10,7 @@ namespace KitchenSceneTao
 {
     public static class Scene
     {
+
         public static void DrawRoom()
         {
             Gl.glBegin(Gl.GL_QUADS);
@@ -29,19 +30,68 @@ namespace KitchenSceneTao
             Gl.glVertex3f(-5, 3, 5);
 
             // Left wall (blueish)
-            Gl.glColor3f(0.7f, 0.8f, 0.9f);
+            Gl.glColor3f(0.8f, 0.8f, 0.8f);
             DrawWall(-5, 0, -5, -5, 3, 5);
 
-            // Right wall (blueish)
-            Gl.glColor3f(0.7f, 0.8f, 0.9f);
-            DrawWall(5, 0, -5, 5, 3, 5);
-
             // Back wall (blueish)
-            Gl.glColor3f(0.7f, 0.8f, 0.9f);
+            Gl.glColor3f(0.8f, 0.8f, 0.8f);
             DrawWall(-5, 0, -5, 5, 3, -5);
 
             Gl.glEnd();
+            DrawRightWallWithDoor();
+
+            
         }
+
+        public static void DrawWoman(float offset)
+        {
+            Gl.glPushMatrix();
+            float baseX = offset+1f;
+            float baseZ = -3f;
+            Gl.glTranslatef(baseX - 0.5f, 0, baseZ);
+            Gl.glRotatef(90, 0, 1, 0); // Повернуть к двери
+            Gl.glColor3f(1.0f, 0.8f, 0.6f);
+            // Голова
+            Gl.glPushMatrix();
+            Gl.glTranslatef(0, 1.7f, 0);
+            Glut.glutSolidSphere(0.15f, 12, 12);
+            Gl.glPopMatrix();
+
+            // Руки
+            for (float dx = -0.2f; dx <= 0.2f; dx += 0.4f)
+            {
+                Gl.glPushMatrix();
+                Gl.glTranslatef(dx, 1.1f, 0); // ниже, чтобы быть вдоль платья
+                Gl.glRotatef(10 * Math.Sign(dx), 0, 0, 1); // слегка наклонены к телу
+                Gl.glScalef(0.1f, 0.5f, 0.1f);
+                Glut.glutSolidCube(1);
+                Gl.glPopMatrix();
+            }
+
+            // Ноги
+            for (float dx = -0.15f; dx <= 0.15f; dx += 0.3f)
+            {
+                Gl.glPushMatrix();
+                Gl.glTranslatef(dx, 0.3f, 0);
+                Gl.glScalef(0.1f, 0.6f, 0.1f);
+                Glut.glutSolidCube(1);
+                Gl.glPopMatrix();
+            }
+
+            // Платье (розовый конус)
+            Gl.glPushMatrix();
+            Gl.glColor3f(1.0f, 0.4f, 0.7f); // Розовый цвет
+            Gl.glTranslatef(0, 0.5f, 0);
+            Gl.glRotatef(-90, 1, 0, 0); // Конус вертикально
+            Glut.glutSolidCone(0.35f, 1.2f, 20, 20);
+            Gl.glPopMatrix();
+
+            Gl.glPopMatrix();
+        }
+
+
+
+
 
         private static void DrawWall(float x1, float y1, float z1, float x2, float y2, float z2)
         {
@@ -341,28 +391,102 @@ namespace KitchenSceneTao
             Gl.glPopMatrix();
         }
 
-        public static void DrawChandelier()
+        public static void DrawRealisticChandelier()
         {
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, 2.8f, 0); // Почти под потолком
 
-            // Вертикальный стержень крепления к потолку
-            Gl.glColor3f(0.8f, 0.8f, 0.6f);
+            float centerX = 0, centerY = 3.0f, centerZ = 0;
+            float verticalRodLength = 0.5f;
+            float ringRadius = 0.5f;
+
+            // Цвет стержней
+            Gl.glColor3f(0.2f, 0.2f, 0.2f);
+
+            // Центральный вертикальный стержень
+            DrawCylinder(centerX, centerY, centerZ, centerX, centerY - verticalRodLength, centerZ, 0.03f);
+
+            // Позиция кольца (горизонтального каркаса)
+            float ringY = centerY - verticalRodLength;
+
+            // Горизонтальный "каркас" - тор
+            Gl.glColor3f(0.3f, 0.3f, 0.3f);
             Gl.glPushMatrix();
-            Gl.glScalef(0.05f, 0.3f, 0.05f);
-            Glut.glutSolidCube(1);
+            Gl.glTranslatef(centerX, ringY, centerZ);
+            Gl.glRotatef(90, 1, 0, 0); // положим тор в горизонтальную плоскость
+            Glut.glutSolidTorus(0.02f, ringRadius, 12, 24);
             Gl.glPopMatrix();
 
-            // Горизонтальные перекладины
-            DrawRod(-0.4f, 0, -0.3f, 0.4f, 0, -0.3f);
-            DrawRod(0.4f, 0, -0.3f, 0.0f, 0, 0.4f);
-            DrawRod(0.0f, 0, 0.4f, -0.4f, 0, -0.3f);
+            // Расположение 4 плафонов по кругу
+            Gl.glColor4f(1.0f, 1.0f, 0.8f, 0.7f); // полупрозрачные
+            EnableTransparency();
 
-            // Сами лампы
-            Gl.glColor3f(1.0f, 1.0f, 0.8f);
-            DrawLamp(-0.4f, -0.3f);
-            DrawLamp(0.4f, -0.3f);
-            DrawLamp(0.0f, 0.4f);
+            for (int i = 0; i < 4; i++)
+            {
+                double angle = i * Math.PI / 2;
+                float lampX = centerX + ringRadius * (float)Math.Cos(angle);
+                float lampZ = centerZ + ringRadius * (float)Math.Sin(angle);
+                float lampY = ringY - 0.25f;
+
+                // Стрежень от кольца к плафону
+                Gl.glColor3f(0.2f, 0.2f, 0.2f);
+                DrawCylinder(lampX, ringY, lampZ, lampX, lampY, lampZ, 0.015f);
+
+                // Плафон
+                Gl.glColor4f(1.0f, 1.0f, 0.8f, 0.7f);
+                DrawLamp(lampX, lampY, lampZ);
+            }
+
+            DisableTransparency();
+            Gl.glPopMatrix();
+        }
+
+        private static void DrawCylinder(float x1, float y1, float z1, float x2, float y2, float z2, float radius)
+        {
+            Gl.glPushMatrix();
+
+            // Вектор направления
+            float dx = x2 - x1;
+            float dy = y2 - y1;
+            float dz = z2 - z1;
+            float length = (float)Math.Sqrt(dx * dx + dy * dy + dz * dz);
+
+            // Переместиться в начальную точку
+            Gl.glTranslatef(x1, y1, z1);
+
+            // Если длина нулевая, рисовать не нужно
+            if (length < 0.0001f)
+            {
+                Gl.glPopMatrix();
+                return;
+            }
+
+            // Нормализованный вектор направления
+            float ux = dx / length;
+            float uy = dy / length;
+            float uz = dz / length;
+
+            // Вектор (0,1,0)
+            float vx = 0;
+            float vy = 1;
+            float vz = 0;
+
+            // Вектор оси вращения — векторное произведение v × u
+            float rx = vy * uz - vz * uy;
+            float ry = vz * ux - vx * uz;
+            float rz = vx * uy - vy * ux;
+
+            float sinA = (float)Math.Sqrt(rx * rx + ry * ry + rz * rz);
+            float cosA = vy * uy + vz * uz + vx * ux; // скалярное произведение
+            float angle = (float)(Math.Atan2(sinA, cosA) * 180.0 / Math.PI);
+
+            if (sinA > 0.0001f)
+                Gl.glRotatef(angle, rx, ry, rz);
+
+            // Масштаб по высоте
+            Gl.glScalef(radius, length, radius);
+
+            // Рисуем единичный цилиндр вдоль Y
+            Glut.glutSolidCylinder(1, 1, 16, 4);
 
             Gl.glPopMatrix();
         }
@@ -400,6 +524,60 @@ namespace KitchenSceneTao
             Gl.glPopMatrix();
         }
 
+        private static void DrawRightWallWithDoor()
+        {
+            float wallX = 5f;
+            float wallHeight = 3f;
+
+            float doorHeight = 2f;
+            float doorWidth = 1f;
+            float doorBottom = 0f;
+            float doorZ = -3.5f; // Смещение по Z
+
+            Gl.glColor3f(0.8f, 0.8f, 0.8f); // Цвет стены
+
+            // Левая часть стены
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glVertex3f(wallX, 0, -5);
+            Gl.glVertex3f(wallX, wallHeight, -5);
+            Gl.glVertex3f(wallX, wallHeight, doorZ);
+            Gl.glVertex3f(wallX, 0, doorZ);
+            Gl.glEnd();
+
+            // Правая часть стены
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glVertex3f(wallX, 0, doorZ + doorWidth);
+            Gl.glVertex3f(wallX, wallHeight, doorZ + doorWidth);
+            Gl.glVertex3f(wallX, wallHeight, 5);
+            Gl.glVertex3f(wallX, 0, 5);
+            Gl.glEnd();
+
+            // Верхняя часть над дверью (полная перемычка)
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glVertex3f(wallX, doorHeight, doorZ);
+            Gl.glVertex3f(wallX, wallHeight, doorZ);
+            Gl.glVertex3f(wallX, wallHeight, doorZ + doorWidth);
+            Gl.glVertex3f(wallX, doorHeight, doorZ + doorWidth);
+            Gl.glEnd();
+        }
+
+        // Дверь
+        public static void DrawDoor(float angle)
+        {
+            Gl.glPushMatrix();
+            Gl.glTranslatef(5f, 0f, -3.5f); // точка крепления к правой стене
+            Gl.glRotatef(angle, 0, 1, 0); // поворот вокруг вертикальной оси
+
+            Gl.glColor3f(0.4f, 0.2f, 0.1f); // коричневая дверь
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glVertex3f(0, 0, 0);
+            Gl.glVertex3f(0, 2, 0);
+            Gl.glVertex3f(0, 2, 1);
+            Gl.glVertex3f(0, 0, 1);
+            Gl.glEnd();
+
+            Gl.glPopMatrix();
+        }
         private static void Normalize(ref float[] v)
         {
             float len = (float)Math.Sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -422,13 +600,32 @@ namespace KitchenSceneTao
             };
         }
 
-        private static void DrawLamp(float xOffset, float zOffset)
+        private static void DrawLamp(float x, float y, float z)
         {
             Gl.glPushMatrix();
-            Gl.glTranslatef(xOffset, 0, zOffset);
+            Gl.glTranslatef(x, y, z);
             Gl.glScalef(0.2f, 0.2f, 0.2f);
             Glut.glutSolidSphere(1, 16, 16);
             Gl.glPopMatrix();
         }
+
+        private static void EnableTransparency()
+        {
+            Gl.glEnable(Gl.GL_BLEND);
+            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
+            Gl.glDisable(Gl.GL_DEPTH_TEST);
+        }
+
+        private static void DisableTransparency()
+        {
+            Gl.glDisable(Gl.GL_BLEND);
+            Gl.glEnable(Gl.GL_DEPTH_TEST);
+        }
+        public struct Vector3
+        {
+            public float X, Y, Z;
+            public Vector3(float x, float y, float z) { X = x; Y = y; Z = z; }
+        }
+
     }
 }
