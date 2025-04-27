@@ -5,11 +5,13 @@ using System.Windows.Forms;
 using Tao.FreeGlut;
 using Tao.OpenGl;
 using Tao.Platform.Windows;
+using static KitchenSceneTao.Scene;
 
 namespace KitchenSceneTao
 {
     public partial class Form1 : Form
     {
+        float deltaTime = 0.01f;
         float camX = 0, camY = 1.5f, camZ = 5;
         float camYaw = 0.0f, camPitch = 0.0f;
         float moveSpeed = 0.1f;
@@ -37,6 +39,7 @@ namespace KitchenSceneTao
             glControl.MouseUp += glControl_MouseUp;
             glControl.MouseMove += glControl_MouseMove;
             doorTimer.Interval = 30; // частота обновления (мс)
+            Scene.InitializeTornado();
             doorTimer.Tick += (s, e) =>
             {
                 if (doorAngle > -90f)
@@ -56,6 +59,7 @@ namespace KitchenSceneTao
                         womanEntering = false;
                     }
                 }
+                
             };
         }
 
@@ -92,6 +96,9 @@ namespace KitchenSceneTao
             //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_AMBIENT, lightAmbient);
             //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, lightDiffuse);
             //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, lightSpecular);
+            // Обновляем подпрыгивание объектов
+            float deltaTime = 0.005f;  // Здесь deltaTime будет фиксированным, но если хочешь, можно вычислять его
+            Scene.UpdateJump(deltaTime);
             Gl.glClear(Gl.GL_COLOR_BUFFER_BIT | Gl.GL_DEPTH_BUFFER_BIT);
             Gl.glLoadIdentity();
 
@@ -109,6 +116,8 @@ namespace KitchenSceneTao
             Scene.DrawGlass();
             Scene.DrawRugWithTree();
             Scene.DrawDoor(doorAngle);
+            Scene.UpdateTornado(deltaTime);
+            Scene.DrawTornado();
             Scene.DrawWoman(womanX);
             glControl.Invalidate();
         }

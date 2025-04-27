@@ -5,12 +5,57 @@ using System.Text;
 using System.Threading.Tasks;
 using Tao.FreeGlut;
 using Tao.OpenGl;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TaskbarClock;
 
 namespace KitchenSceneTao
 {
     public static class Scene
     {
+        private static List<Particle> tornadoParticles = new List<Particle>();
+        private static float tornadoCenterX = -3.0f;
+        private static float tornadoCenterY = 0.0f;
+        private static float tornadoCenterZ = -2.0f;
 
+        private static float orbitCenterX = -1.5f;
+        private static float orbitCenterY = 0.5f;
+        private static float orbitCenterZ = -1.0f;
+        private static float orbitRadius = 1.87f;
+        private static float orbitAngle = 0.0f; // угол движения вокруг окружности
+        private static float orbitSpeed = 20.0f; // скорость вращения (градусов в секунду)
+                                                 // Флаги подпрыгивания для объектов
+                                                 // Параметры для подпрыгивания
+                                                 // Флаги подпрыгивания для объектов
+                                                 // Параметры для подпрыгивания
+        static float time = 0.0f;  // Время анимации
+        static bool bedJump = false;
+        static bool tableJump = false;
+        static bool plateJump = false;
+        static bool glassJump = false;
+
+        // Смещения по высоте для объектов
+        static float bedJumpOffset = 0.0f;
+        static float tableJumpOffset = 0.0f;
+        static float plateJumpOffset = 0.0f;
+        static float glassJumpOffset = 0.0f;
+
+        // Параметры прыжка
+        const float jumpHeight = 0.3f;  // Как высоко подпрыгивает объект
+        const float jumpSpeed = 2.5f;   // Скорость прыжка
+
+        // Обновление анимации подпрыгивания
+        public static void UpdateJump(float deltaTime)
+        {
+            // Обновление времени
+            time += deltaTime * jumpSpeed;
+
+            // Обновление прыжка для кровати
+            bedJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Подпрыгивает по синусоиде
+
+            // Обновление прыжка для стола и объектов на нем
+            tableJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Стол подпрыгивает
+            plateJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.1f;  // Тарелка немного выше
+            glassJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.2f;  // Стакан немного выше
+        }
         public static void DrawRoom()
         {
             Gl.glBegin(Gl.GL_QUADS);
@@ -103,6 +148,8 @@ namespace KitchenSceneTao
 
         public static void DrawTable()
         {
+            Gl.glPushMatrix();
+            Gl.glTranslatef(0, tableJumpOffset, 0);  // Подпрыгивание стола
             Gl.glColor3f(0.6f, 0.3f, 0.1f);
             Gl.glPushMatrix();
             Gl.glTranslatef(0, 1.0f, 0);
@@ -114,6 +161,7 @@ namespace KitchenSceneTao
             DrawLeg(0.9f, 0.5f, -0.4f);
             DrawLeg(-0.9f, 0.5f, 0.4f);
             DrawLeg(0.9f, 0.5f, 0.4f);
+            Gl.glPopMatrix();
         }
 
         private static void DrawLeg(float x, float y, float z)
@@ -128,18 +176,13 @@ namespace KitchenSceneTao
         public static void DrawPlate()
         {
             Gl.glPushMatrix();
+            Gl.glTranslatef(0, plateJumpOffset, 0);  // Подпрыгивание тарелки
             Gl.glTranslatef(0, 1.1f, 0);
             Gl.glRotatef(-90, 1, 0, 0);
-
-            // Цвет фарфора
             Gl.glColor3f(1f, 1f, 1f);
-
-            // Наружный обод (тор)
             Glut.glutSolidTorus(0.02f, 0.2f, 16, 32);
-
-            // Дно (тонкий диск)
             Gl.glBegin(Gl.GL_TRIANGLE_FAN);
-            Gl.glVertex3f(0, 0, 0); // центр
+            Gl.glVertex3f(0, 0, 0);
             for (int i = 0; i <= 32; i++)
             {
                 float angle = (float)(2 * Math.PI * i / 32);
@@ -148,7 +191,6 @@ namespace KitchenSceneTao
                 Gl.glVertex3f(x, y, 0);
             }
             Gl.glEnd();
-
             Gl.glPopMatrix();
         }
 
@@ -252,18 +294,14 @@ namespace KitchenSceneTao
         }
         public static void DrawGlass()
         {
-            Gl.glEnable(Gl.GL_BLEND);
-            Gl.glBlendFunc(Gl.GL_SRC_ALPHA, Gl.GL_ONE_MINUS_SRC_ALPHA);
-            Gl.glEnable(Gl.GL_CULL_FACE);               // <--- вот это
-            Gl.glCullFace(Gl.GL_BACK);
-            Gl.glColor4f(0.6f, 0.8f, 1.0f, 0.4f); // полупрозрачный цвет
-
+            Gl.glPushMatrix();
+            Gl.glTranslatef(0, glassJumpOffset, 0);  // Подпрыгивание стакана
+            Gl.glColor4f(0.6f, 0.8f, 1.0f, 0.4f); // полупрозрачный стакан
             Gl.glPushMatrix();
             Gl.glTranslatef(0.5f, 1.05f, 0);
             DrawHermiteSurface();
             Gl.glPopMatrix();
-            Gl.glDisable(Gl.GL_CULL_FACE);
-            Gl.glDisable(Gl.GL_BLEND);
+            Gl.glPopMatrix();
         }
 
         private static void DrawHermiteSurface()
@@ -369,6 +407,8 @@ namespace KitchenSceneTao
         }
         public static void DrawBed()
         {
+            Gl.glPushMatrix();
+            Gl.glTranslatef(0, bedJumpOffset, 0);  // Смещение по высоте для подпрыгивания
             Gl.glColor3f(0.5f, 0.2f, 0.2f);
             Gl.glPushMatrix();
             Gl.glTranslatef(-3, 0.0f, -2);
@@ -388,6 +428,7 @@ namespace KitchenSceneTao
             Gl.glTranslatef(-3.5f, 0.5f, -2);
             Gl.glScalef(0.4f, 0.2f, 0.6f);
             Glut.glutSolidSphere(1, 16, 16);
+            Gl.glPopMatrix();
             Gl.glPopMatrix();
         }
 
@@ -616,6 +657,96 @@ namespace KitchenSceneTao
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }
 
+        // Инициализация частиц
+        public static void InitializeTornado()
+        {
+            Random rand = new Random();
+            tornadoParticles.Clear();
+            for (int i = 0; i < 200; i++) // количество частиц
+            {
+                Particle p = new Particle();
+                p.angle = (float)(rand.NextDouble() * 360);
+                p.radius = 0.2f + (float)rand.NextDouble() * 2.0f; // радиус от 0.2 до 2.2
+                p.height = (float)(rand.NextDouble() * 3.0f); // высота от 0 до 3 (до потолка)
+                p.speed = 50f + (float)rand.NextDouble() * 100f; // скорость вращения
+                tornadoParticles.Add(p);
+            }
+        }
+
+        // Обновление частиц
+        public static void UpdateTornado(float deltaTime)
+        {
+            orbitAngle += orbitSpeed * deltaTime;
+            if (orbitAngle > 360.0f)
+                orbitAngle -= 360.0f;
+
+            float rad = orbitAngle * (float)Math.PI / 180.0f;
+
+            tornadoCenterX = orbitCenterX + orbitRadius * (float)Math.Cos(rad);
+            tornadoCenterZ = orbitCenterZ + orbitRadius * (float)Math.Sin(rad);
+            tornadoCenterY = orbitCenterY; // высота постоянная
+
+            // Обновляем вращение самих частиц
+            for (int i = 0; i < tornadoParticles.Count; i++)
+            {
+                Particle p = tornadoParticles[i];
+                p.angle += p.speed * deltaTime;
+                if (p.angle > 360) p.angle -= 360;
+
+                p.height += 0.2f * deltaTime;
+                if (p.height > 3.0f) p.height = 0.0f;
+
+                tornadoParticles[i] = p;
+            }
+            // Обновление прыжка для кровати
+            if (bedJump)
+            {
+                bedJumpOffset += jumpSpeed * deltaTime;
+                if (bedJumpOffset >= jumpHeight) bedJump = false;
+            }
+            else if (bedJumpOffset > 0)
+            {
+                bedJumpOffset -= jumpSpeed * deltaTime;
+                if (bedJumpOffset < 0) bedJumpOffset = 0;
+            }
+
+            // Обновление прыжка для стола и объектов на нём
+            if (tableJump)
+            {
+                tableJumpOffset += jumpSpeed * deltaTime;
+                plateJumpOffset += jumpSpeed * deltaTime * 1.1f;  // Тарелка прыгает немного выше
+                glassJumpOffset += jumpSpeed * deltaTime * 1.2f;  // Стакан прыгает немного выше
+                if (tableJumpOffset >= jumpHeight) tableJump = false;
+            }
+            else if (tableJumpOffset > 0)
+            {
+                tableJumpOffset -= jumpSpeed * deltaTime;
+                if (tableJumpOffset < 0) tableJumpOffset = 0;
+
+                plateJumpOffset -= jumpSpeed * deltaTime * 1.1f;
+                if (plateJumpOffset < 0) plateJumpOffset = 0;
+
+                glassJumpOffset -= jumpSpeed * deltaTime * 1.2f;
+                if (glassJumpOffset < 0) glassJumpOffset = 0;
+            }
+        }
+
+        // Отрисовка частиц
+        public static void DrawTornado()
+        {
+            Gl.glPointSize(3);
+            Gl.glBegin(Gl.GL_POINTS);
+            Gl.glColor3f(0f, 0f, 0f);
+            foreach (var p in tornadoParticles)
+            {
+                float rad = p.angle * (float)Math.PI / 180.0f;
+                float x = tornadoCenterX + p.radius * (float)Math.Cos(rad);
+                float z = tornadoCenterZ + p.radius * (float)Math.Sin(rad);
+                Gl.glVertex3f(x, p.height, z);
+            }
+            Gl.glEnd();
+        }
+
         private static void DisableTransparency()
         {
             Gl.glDisable(Gl.GL_BLEND);
@@ -625,7 +756,23 @@ namespace KitchenSceneTao
         {
             public float X, Y, Z;
             public Vector3(float x, float y, float z) { X = x; Y = y; Z = z; }
+            public static float Distance(Vector3 v1, Vector3 v2)
+            {
+                return (float)Math.Sqrt(Math.Pow(v2.X - v1.X, 2) + Math.Pow(v2.Y - v1.Y, 2) + Math.Pow(v2.Z - v1.Z, 2));
+            }
         }
 
+        public static Vector3 GetTornadoPosition()
+        {
+            return new Vector3(tornadoCenterX, tornadoCenterY, tornadoCenterZ);
+        }
+        // Структура частицы
+        private struct Particle
+        {
+            public float angle; // угол вокруг центра
+            public float radius; // расстояние от центра
+            public float height; // высота
+            public float speed;  // скорость вращения
+        }
     }
 }
