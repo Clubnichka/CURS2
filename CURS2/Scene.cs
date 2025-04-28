@@ -12,50 +12,54 @@ namespace KitchenSceneTao
     public static class Scene
     {
         private static List<Particle> tornadoParticles = new List<Particle>();
-        private static float tornadoCenterX = -3.0f;
-        private static float tornadoCenterY = 0.0f;
-        private static float tornadoCenterZ = -2.0f;
-
-        private static float orbitCenterX = -1.5f;
-        private static float orbitCenterY = 0.5f;
-        private static float orbitCenterZ = -1.0f;
-        private static float orbitRadius = 1.87f;
-        private static float orbitAngle = 0.0f; // угол движения вокруг окружности
-        private static float orbitSpeed = 20.0f; // скорость вращения (градусов в секунду)
-                                                 // Флаги подпрыгивания для объектов
-                                                 // Параметры для подпрыгивания
-                                                 // Флаги подпрыгивания для объектов
-                                                 // Параметры для подпрыгивания
-        static float time = 0.0f;  // Время анимации
+        // Флаги
         static bool bedJump = false;
-        static bool tableJump = false;
-        static bool plateJump = false;
-        static bool glassJump = false;
+        static bool tablePlateGlassJump = false;
 
-        // Смещения по высоте для объектов
-        static float bedJumpOffset = 0.0f;
-        static float tableJumpOffset = 0.0f;
-        static float plateJumpOffset = 0.0f;
-        static float glassJumpOffset = 0.0f;
+        // Для кровати
+        static bool bedJumpActive = false;
+        static float bedJumpTime = 0f;
+        static float bedJumpOffset = 0f;
 
-        // Параметры прыжка
-        const float jumpHeight = 0.3f;  // Как высоко подпрыгивает объект
-        const float jumpSpeed = 2.5f;   // Скорость прыжка
+        // Для стола + тарелки + стакана
+        static bool tablePlateGlassJumpActive = false;
+        static float tableJumpTime = 0f;
+        static float tableJumpOffset = 0f;
+        static float plateJumpOffset = 0f;
+        static float glassJumpOffset = 0f;
+
+        // Общие параметры
+        static float jumpHeight = 0.2f; // высота прыжка
+        static float jumpSpeed = 0.005f;  // скорость прыжка (как быстро трясётся)
+
+        // Параметры торнадо
+        static float orbitAngle = 0.0f;
+        static float orbitSpeed = 45.0f; // градусов в секунду
+        static float orbitRadius = 1.837f;
+        static float orbitCenterX = -1.5f, orbitCenterY = 0.65f, orbitCenterZ = -1.0f;
+        static float tornadoCenterX = 0.0f, tornadoCenterY = 0.0f, tornadoCenterZ = 0.0f;
+        static float time = 0.0f;
+        // Для кровати
+        static bool isBedJumping = false;
+
+        // Для стола + тарелки + стакана
+        static bool isTableJumping = false;
+
 
         // Обновление анимации подпрыгивания
-        public static void UpdateJump(float deltaTime)
-        {
-            // Обновление времени
-            time += deltaTime * jumpSpeed;
+        //public static void UpdateJump(float deltaTime)
+        //{
+        //    // Обновление времени
+        //    time += deltaTime * jumpSpeed;
 
-            // Обновление прыжка для кровати
-            bedJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Подпрыгивает по синусоиде
+        //    // Обновление прыжка для кровати
+        //    bedJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Подпрыгивает по синусоиде
 
-            // Обновление прыжка для стола и объектов на нем
-            tableJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Стол подпрыгивает
-            plateJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.1f;  // Тарелка немного выше
-            glassJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.2f;  // Стакан немного выше
-        }
+        //    // Обновление прыжка для стола и объектов на нем
+        //    tableJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Стол подпрыгивает
+        //    plateJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.1f;  // Тарелка немного выше
+        //    glassJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.2f;  // Стакан немного выше
+        //}
         public static void DrawRoom()
         {
             Gl.glBegin(Gl.GL_QUADS);
@@ -698,36 +702,58 @@ namespace KitchenSceneTao
 
                 tornadoParticles[i] = p;
             }
-            // Обновление прыжка для кровати
-            if (bedJump)
+            // Проверка для кровати
+            if (!isBedJumping && Vector3.Distance(new Vector3(tornadoCenterX, tornadoCenterY, tornadoCenterZ), new Vector3(-3f, 0f, -2f)) < 1.5f)
             {
-                bedJumpOffset += jumpSpeed * deltaTime;
-                if (bedJumpOffset >= jumpHeight) bedJump = false;
-            }
-            else if (bedJumpOffset > 0)
-            {
-                bedJumpOffset -= jumpSpeed * deltaTime;
-                if (bedJumpOffset < 0) bedJumpOffset = 0;
+                isBedJumping = true;
+                bedJumpTime = 0f; // сброс времени прыжка
             }
 
-            // Обновление прыжка для стола и объектов на нём
-            if (tableJump)
+            // Проверка для стола
+            if (!isTableJumping && Vector3.Distance(new Vector3(tornadoCenterX, tornadoCenterY, tornadoCenterZ), new Vector3(0f, 1.0f, 0f)) < 1.5f)
             {
-                tableJumpOffset += jumpSpeed * deltaTime;
-                plateJumpOffset += jumpSpeed * deltaTime * 1.1f;  // Тарелка прыгает немного выше
-                glassJumpOffset += jumpSpeed * deltaTime * 1.2f;  // Стакан прыгает немного выше
-                if (tableJumpOffset >= jumpHeight) tableJump = false;
+                isTableJumping = true;
+                tableJumpTime = 0f; // сброс времени прыжка
             }
-            else if (tableJumpOffset > 0)
+            Scene.UpdateBedJump();
+            Scene.UpdateTableJump();
+        }
+
+        // Обновление прыжка кровати
+        public static void UpdateBedJump()
+        {
+            if (isBedJumping)
             {
-                tableJumpOffset -= jumpSpeed * deltaTime;
-                if (tableJumpOffset < 0) tableJumpOffset = 0;
+                bedJumpTime += jumpSpeed; // Например, 0.05f на кадр
+                bedJumpOffset = (float)(Math.Abs(Math.Sin(bedJumpTime)) * jumpHeight);
 
-                plateJumpOffset -= jumpSpeed * deltaTime * 1.1f;
-                if (plateJumpOffset < 0) plateJumpOffset = 0;
+                if (bedJumpTime >= Math.PI) // Прыжок один синус — от 0 до π
+                {
+                    isBedJumping = false;
+                    bedJumpOffset = 0f;
+                    bedJumpTime = 0f;
+                }
+            }
+        }
 
-                glassJumpOffset -= jumpSpeed * deltaTime * 1.2f;
-                if (glassJumpOffset < 0) glassJumpOffset = 0;
+        // Обновление прыжка стола, тарелки и стакана
+        public static void UpdateTableJump()
+        {
+            if (isTableJumping)
+            {
+                tableJumpTime += jumpSpeed; // Например, 0.05f на кадр
+                tableJumpOffset = (float)(Math.Abs(Math.Sin(tableJumpTime)) * jumpHeight);
+                plateJumpOffset = (float)(Math.Abs(Math.Sin(tableJumpTime * 1.1f)) * jumpHeight);
+                glassJumpOffset = (float)(Math.Abs(Math.Sin(tableJumpTime * 1.2f)) * jumpHeight);
+
+                if (tableJumpTime >= Math.PI) // Прыжок завершён
+                {
+                    isTableJumping = false;
+                    tableJumpOffset = 0f;
+                    plateJumpOffset = 0f;
+                    glassJumpOffset = 0f;
+                    tableJumpTime = 0f;
+                }
             }
         }
 

@@ -27,7 +27,8 @@ namespace KitchenSceneTao
         bool womanEntering = false;
         float womanStep = 0.02f; // Скорость входа
         Timer doorTimer = new Timer();
-       
+        Timer animationTimer = new Timer();
+
 
         public Form1()
         {
@@ -61,6 +62,17 @@ namespace KitchenSceneTao
                 }
                 
             };
+            animationTimer.Interval = 16; // ~60 FPS
+            animationTimer.Tick += AnimationTimer_Tick;
+            animationTimer.Start(); // ЗАПУСКАЕМ отдельный таймер!
+        }
+
+        private void AnimationTimer_Tick(object sender, EventArgs e)
+        {
+            float deltaTime = 0.016f; // для ~60 кадров в секунду
+
+            Scene.UpdateTornado(deltaTime);
+            Invalidate(); // Перерисовать сцену
         }
 
         private void InitializeOpenGLControl()
@@ -84,21 +96,10 @@ namespace KitchenSceneTao
 
         private void RenderScene()
         {
-            //Gl.glEnable(Gl.GL_LIGHTING);
-            //Gl.glEnable(Gl.GL_LIGHT0);
-
-            //float[] lightPos = { 0f, 2.8f, 0f, 1f };
-            //float[] lightAmbient = { 0.2f, 0.2f, 0.2f, 1f };
-            //float[] lightDiffuse = { 1.0f, 1.0f, 0.8f, 1f };
-            //float[] lightSpecular = { 1.0f, 1.0f, 0.8f, 1f };
-
-            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_POSITION, lightPos);
-            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_AMBIENT, lightAmbient);
-            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_DIFFUSE, lightDiffuse);
-            //Gl.glLightfv(Gl.GL_LIGHT0, Gl.GL_SPECULAR, lightSpecular);
+            
             // Обновляем подпрыгивание объектов
-            float deltaTime = 0.005f;  // Здесь deltaTime будет фиксированным, но если хочешь, можно вычислять его
-            Scene.UpdateJump(deltaTime);
+            float deltaTime = 0.005f;  
+            //Scene.UpdateJump(deltaTime);
             Gl.glClear(Gl.GL_COLOR_BUFFER_BIT | Gl.GL_DEPTH_BUFFER_BIT);
             Gl.glLoadIdentity();
 
