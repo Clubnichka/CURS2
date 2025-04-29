@@ -26,7 +26,7 @@ namespace KitchenSceneTao
         float womanOffset = 0f;
         bool embossEnabled = false;
         bool womanEntering = false;
-        float womanStep = 0.02f; // Скорость входа
+        float womanStep = 0.02f; 
         Timer doorTimer = new Timer();
         Timer animationTimer = new Timer();
 
@@ -40,14 +40,14 @@ namespace KitchenSceneTao
             glControl.MouseDown += glControl_MouseDown;
             glControl.MouseUp += glControl_MouseUp;
             glControl.MouseMove += glControl_MouseMove;
-            doorTimer.Interval = 30; // частота обновления (мс)
-            Scene.InitializeTornado();
+            doorTimer.Interval = 30;
+            Particles.InitializeTornado();
             doorTimer.Tick += (s, e) =>
             {
                 if (doorAngle > -90f)
                 {
-                    doorAngle -= 2f; // скорость открытия
-                    Invalidate(); // перерисовать сцену
+                    doorAngle -= 2f; 
+                    Invalidate();
                 }
                 else
                 {
@@ -63,17 +63,17 @@ namespace KitchenSceneTao
                 }
                 
             };
-            animationTimer.Interval = 16; // ~60 FPS
+            animationTimer.Interval = 16;
             animationTimer.Tick += AnimationTimer_Tick;
-            animationTimer.Start(); // ЗАПУСКАЕМ отдельный таймер!
+            animationTimer.Start(); 
         }
 
         private void AnimationTimer_Tick(object sender, EventArgs e)
         {
-            float deltaTime = 0.016f; // для ~60 кадров в секунду
+            float deltaTime = 0.016f; 
 
-            Scene.UpdateTornado(deltaTime);
-            Invalidate(); // Перерисовать сцену
+            Particles.UpdateTornado(deltaTime);
+            Invalidate(); 
         }
 
         private void InitializeOpenGLControl()
@@ -98,9 +98,7 @@ namespace KitchenSceneTao
         private void RenderScene()
         {
             
-            // Обновляем подпрыгивание объектов
             float deltaTime = 0.005f;  
-            //Scene.UpdateJump(deltaTime);
             Gl.glClear(Gl.GL_COLOR_BUFFER_BIT | Gl.GL_DEPTH_BUFFER_BIT);
             Gl.glLoadIdentity();
 
@@ -118,12 +116,12 @@ namespace KitchenSceneTao
             Scene.DrawGlass();
             Scene.DrawRugWithTree();
             Scene.DrawDoor(doorAngle);
-            Scene.UpdateTornado(deltaTime);
-            Scene.DrawTornado();
+            Particles.UpdateTornado(deltaTime);
+            Particles.DrawTornado();
             Scene.DrawWoman(womanX);
-            if (Scene.embossEnabled)
+            if (Filter.embossEnabled)
             {
-                Scene.ApplyEmbossFilterAsTexture(glControl.Width, glControl.Height);
+                Filter.ApplyEmbossFilterAsTexture(glControl.Width, glControl.Height);
             }
             glControl.Invalidate();
         }
@@ -148,7 +146,7 @@ namespace KitchenSceneTao
 
         private void button1_Click(object sender, EventArgs e)
         {
-            Scene.ToggleEmboss();
+            Filter.ToggleEmboss();
         }
 
         private void glControl_MouseDown(object sender, MouseEventArgs e)

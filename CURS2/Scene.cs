@@ -1,4 +1,5 @@
-﻿using System;
+﻿using CURS2;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -13,192 +14,9 @@ namespace KitchenSceneTao
 {
     public static class Scene
     {
-        private static List<Particle> tornadoParticles = new List<Particle>();
-        // Флаги
-        static bool bedJump = false;
-        static bool tablePlateGlassJump = false;
-
-        // Для кровати
-        static bool bedJumpActive = false;
-        static float bedJumpTime = 0f;
-        static float bedJumpOffset = 0f;
-
-        // Для стола + тарелки + стакана
-        static bool tablePlateGlassJumpActive = false;
-        static float tableJumpTime = 0f;
-        static float tableJumpOffset = 0f;
-        static float plateJumpOffset = 0f;
-        static float glassJumpOffset = 0f;
-
-        // Общие параметры
-        static float jumpHeight = 0.2f; // высота прыжка
-        static float jumpSpeed = 0.005f;  // скорость прыжка (как быстро трясётся)
-
-        // Параметры торнадо
-        static float orbitAngle = 0.0f;
-        static float orbitSpeed = 45.0f; // градусов в секунду
-        static float orbitRadius = 1.837f;
-        static float orbitCenterX = -1.5f, orbitCenterY = 0.65f, orbitCenterZ = -1.0f;
-        static float tornadoCenterX = 0.0f, tornadoCenterY = 0.0f, tornadoCenterZ = 0.0f;
-        static float time = 0.0f;
-        // Для кровати
-        static bool isBedJumping = false;
-
-        // Для стола + тарелки + стакана
-        static bool isTableJumping = false;
-        public static int embossTextureId = -1;
-        public static bool embossEnabled = false;
-
-        public static void ToggleEmboss()
-        {
-            embossEnabled = !embossEnabled;
-        }
-
-        public static void ApplyEmbossFilterAsTexture(int width, int height)
-        {
-
-
-            // Перед вызовом glReadPixels убедитесь, что рендеринг завершен
-            Gl.glFinish();
-
-            // Выделяем память для пикселей
-            IntPtr ptr = Marshal.AllocHGlobal(width * height * 3);
-
-            try
-            {
-                // Чтение пикселей с использованием IntPtr
-                Gl.glReadPixels(0, 0, width, height, Gl.GL_RGB, Gl.GL_UNSIGNED_BYTE, ptr);
-
-                // Преобразуем данные из unmanaged памяти в managed массив
-                byte[] rawData = new byte[width * height * 3];
-                Marshal.Copy(ptr, rawData, 0, rawData.Length);
-
-                // Применяем фильтр
-                byte[] filtered = ApplyEmbossFilter(rawData, width, height);
-
-                // Дальнейшая работа с текстурой
-                if (embossTextureId == -1)
-                {
-                    int[] ids = new int[1];
-                    Gl.glGenTextures(1, ids);
-                    embossTextureId = ids[0];
-                }
-
-                Gl.glBindTexture(Gl.GL_TEXTURE_2D, embossTextureId);
-                IntPtr texturePtr = Marshal.AllocHGlobal(filtered.Length);
-                try
-                {
-                    Marshal.Copy(filtered, 0, texturePtr, filtered.Length);
-                    Gl.glTexImage2D(Gl.GL_TEXTURE_2D, 0, Gl.GL_RGB, width, height, 0,
-                                    Gl.GL_RGB, Gl.GL_UNSIGNED_BYTE, texturePtr);
-                }
-                finally
-                {
-                    Marshal.FreeHGlobal(texturePtr);
-                }
-
-                Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_MIN_FILTER, Gl.GL_LINEAR);
-                Gl.glTexParameteri(Gl.GL_TEXTURE_2D, Gl.GL_TEXTURE_MAG_FILTER, Gl.GL_LINEAR);
-
-                // Отрисовка текстуры на экран
-                Gl.glDisable(Gl.GL_DEPTH_TEST);
-                Gl.glMatrixMode(Gl.GL_PROJECTION);
-                Gl.glPushMatrix();
-                Gl.glLoadIdentity();
-                Gl.glOrtho(0, 1, 0, 1, -1, 1);
-                Gl.glMatrixMode(Gl.GL_MODELVIEW);
-                Gl.glPushMatrix();
-                Gl.glLoadIdentity();
-
-                Gl.glEnable(Gl.GL_TEXTURE_2D);
-                Gl.glBegin(Gl.GL_QUADS);
-                Gl.glTexCoord2f(0, 0); Gl.glVertex2f(0, 0);
-                Gl.glTexCoord2f(1, 0); Gl.glVertex2f(1, 0);
-                Gl.glTexCoord2f(1, 1); Gl.glVertex2f(1, 1);
-                Gl.glTexCoord2f(0, 1); Gl.glVertex2f(0, 1);
-                Gl.glEnd();
-                Gl.glDisable(Gl.GL_TEXTURE_2D);
-
-                Gl.glMatrixMode(Gl.GL_PROJECTION);
-                Gl.glPopMatrix();
-                Gl.glMatrixMode(Gl.GL_MODELVIEW);
-                Gl.glPopMatrix();
-                Gl.glEnable(Gl.GL_DEPTH_TEST);
-            }
-            finally
-            {
-                Marshal.FreeHGlobal(ptr);
-            }
-        }
-
-        private static byte[] ApplyEmbossFilter(byte[] data, int width, int height)
-        {
-            byte[] result = new byte[data.Length];
-            int stride = width * 3;
-
-            for (int y = 1; y < height; y++)
-            {
-                for (int x = 1; x < width; x++)
-                {
-                    for (int c = 0; c < 3; c++) // R, G, B
-                    {
-                        int index = (y * width + x) * 3 + c;
-
-                        // Предыдущий пиксель по диагонали вверх-влево
-                        int prevX = x - 1;
-                        int prevY = y - 1;
-
-                        // Безопасная проверка на границу
-                        if (prevX >= 0 && prevY >= 0)
-                        {
-                            int prev = (prevY * width + prevX) * 3 + c;
-                            int diff = data[index] - data[prev] + 128;
-                            result[index] = (byte)Math.Min(255, Math.Max(0, diff));
-                        }
-                        else
-                        {
-                            // На границе — копируем исходное значение
-                            result[index] = data[index];
-                        }
-                    }
-                }
-            }
-
-            // Заполнение верхней строки и левого столбца значениями из соседних пикселей
-            for (int y = 0; y < height; y++)
-            {
-                for (int c = 0; c < 3; c++)
-                {
-                    int index = (y * width + 0) * 3 + c;
-                    result[index] = result[((y * width + 1) * 3 + c)];
-                }
-            }
-
-            for (int x = 0; x < width; x++)
-            {
-                for (int c = 0; c < 3; c++)
-                {
-                    int index = (0 * width + x) * 3 + c;
-                    result[index] = result[((1 * width + x) * 3 + c)];
-                }
-            }
-
-            return result;
-        }
-        // Обновление анимации подпрыгивания
-        //public static void UpdateJump(float deltaTime)
-        //{
-        //    // Обновление времени
-        //    time += deltaTime * jumpSpeed;
-
-        //    // Обновление прыжка для кровати
-        //    bedJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Подпрыгивает по синусоиде
-
-        //    // Обновление прыжка для стола и объектов на нем
-        //    tableJumpOffset = (float)Math.Sin(time) * jumpHeight;  // Стол подпрыгивает
-        //    plateJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.1f;  // Тарелка немного выше
-        //    glassJumpOffset = (float)Math.Sin(time) * jumpHeight * 1.2f;  // Стакан немного выше
-        //}
+       
+        
+       
         public static void DrawRoom()
         {
             Gl.glBegin(Gl.GL_QUADS);
@@ -292,7 +110,7 @@ namespace KitchenSceneTao
         public static void DrawTable()
         {
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, tableJumpOffset, 0);  // Подпрыгивание стола
+            Gl.glTranslatef(0, Animations.tableJumpOffset, 0);  // Подпрыгивание стола
             Gl.glColor3f(0.6f, 0.3f, 0.1f);
             Gl.glPushMatrix();
             Gl.glTranslatef(0, 1.0f, 0);
@@ -319,7 +137,7 @@ namespace KitchenSceneTao
         public static void DrawPlate()
         {
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, plateJumpOffset, 0);  // Подпрыгивание тарелки
+            Gl.glTranslatef(0, Animations.plateJumpOffset, 0);  // Подпрыгивание тарелки
             Gl.glTranslatef(0, 1.1f, 0);
             Gl.glRotatef(-90, 1, 0, 0);
             Gl.glColor3f(1f, 1f, 1f);
@@ -337,88 +155,6 @@ namespace KitchenSceneTao
             Gl.glPopMatrix();
         }
 
-        //public static void DrawGlass()
-        //{
-        //    Gl.glColor3f(0.6f, 0.8f, 1.0f);
-        //    Gl.glPushMatrix();
-        //    Gl.glTranslatef(0.5f, 1.05f, 0);
-        //    DrawHermiteSurface();
-        //    Gl.glPopMatrix();
-        //}
-
-        //private static void DrawHermiteSurface()
-        //{
-        //    int slices = 32;
-        //    int stacks = 16;
-
-        //    Gl.glBegin(Gl.GL_QUAD_STRIP);
-        //    for (int i = 0; i <= stacks; i++)
-        //    {
-        //        float t = (float)i / stacks;
-        //        float y = t * 0.6f;
-        //        float r = HermiteRadius(t);
-
-        //        for (int j = 0; j <= slices; j++)
-        //        {
-        //            float angle = (float)(2 * Math.PI * j / slices);
-        //            float x = (float)(r * Math.Cos(angle));
-        //            float z = (float)(r * Math.Sin(angle));
-        //            Gl.glVertex3f(x, y, z);
-        //        }
-        //    }
-        //    Gl.glEnd();
-        //}
-
-        //private static float HermiteRadius(float t)
-        //{
-        //    float h00 = 2 * t * t * t - 3 * t * t + 1;
-        //    float h10 = t * t * t - 2 * t * t + t;
-        //    float h01 = -2 * t * t * t + 3 * t * t;
-        //    float h11 = t * t * t - t * t;
-
-        //    float p0 = 0.05f;
-        //    float p1 = 0.15f;
-        //    float m0 = 0.2f;
-        //    float m1 = 0.0f;
-
-        //    return h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1;
-        //}
-
-        //public static void DrawRugWithTree()
-        //{
-        //    Gl.glPushMatrix();
-        //    Gl.glTranslatef(0, 0.01f, 0);
-        //    Gl.glColor3f(0.9f, 0.8f, 0.7f);
-        //    Gl.glBegin(Gl.GL_QUADS);
-        //    Gl.glVertex3f(-1.5f, 0, -0.75f);
-        //    Gl.glVertex3f(1.5f, 0, -0.75f);
-        //    Gl.glVertex3f(1.5f, 0, 0.75f);
-        //    Gl.glVertex3f(-1.5f, 0, 0.75f);
-        //    Gl.glEnd();
-
-        //    Gl.glTranslatef(0, 0.001f, 0);
-        //    Gl.glColor3f(0.3f, 0.2f, 0.1f);
-        //    DrawFractalTree(0, 0, 0.5f, -90, 5);
-
-        //    Gl.glPopMatrix();
-        //}
-
-        //private static void DrawFractalTree(float x, float y, float length, float angle, int depth)
-        //{
-        //    if (depth == 0) return;
-
-        //    float rad = (float)(angle * Math.PI / 180);
-        //    float x2 = x + (float)(Math.Cos(rad) * length);
-        //    float y2 = y + (float)(Math.Sin(rad) * length);
-
-        //    Gl.glBegin(Gl.GL_LINES);
-        //    Gl.glVertex3f(x, y, 0);
-        //    Gl.glVertex3f(x2, y2, 0);
-        //    Gl.glEnd();
-
-        //    DrawFractalTree(x2, y2, length * 0.7f, angle - 30, depth - 1);
-        //    DrawFractalTree(x2, y2, length * 0.7f, angle + 30, depth - 1);
-        //}
         private static void DrawFractalTree(float x, float y, float length, float angle, int depth)
         {
             if (depth == 0) return;
@@ -438,7 +174,7 @@ namespace KitchenSceneTao
         public static void DrawGlass()
         {
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, glassJumpOffset, 0);  // Подпрыгивание стакана
+            Gl.glTranslatef(0, Animations.glassJumpOffset, 0);  // Подпрыгивание стакана
             Gl.glColor4f(0.6f, 0.8f, 1.0f, 0.4f); // полупрозрачный стакан
             Gl.glPushMatrix();
             Gl.glTranslatef(0.5f, 1.05f, 0);
@@ -551,7 +287,7 @@ namespace KitchenSceneTao
         public static void DrawBed()
         {
             Gl.glPushMatrix();
-            Gl.glTranslatef(0, bedJumpOffset, 0);  // Смещение по высоте для подпрыгивания
+            Gl.glTranslatef(0, Animations.bedJumpOffset, 0);  // Смещение по высоте для подпрыгивания
             Gl.glColor3f(0.5f, 0.2f, 0.2f);
             Gl.glPushMatrix();
             Gl.glTranslatef(-3, 0.0f, -2);
@@ -800,144 +536,15 @@ namespace KitchenSceneTao
             Gl.glDisable(Gl.GL_DEPTH_TEST);
         }
 
-        // Инициализация частиц
-        public static void InitializeTornado()
-        {
-            Random rand = new Random();
-            tornadoParticles.Clear();
-            for (int i = 0; i < 200; i++) // количество частиц
-            {
-                Particle p = new Particle();
-                p.angle = (float)(rand.NextDouble() * 360);
-                p.radius = 0.2f + (float)rand.NextDouble() * 2.0f; // радиус от 0.2 до 2.2
-                p.height = (float)(rand.NextDouble() * 3.0f); // высота от 0 до 3 (до потолка)
-                p.speed = 50f + (float)rand.NextDouble() * 100f; // скорость вращения
-                tornadoParticles.Add(p);
-            }
-        }
-
-        // Обновление частиц
-        public static void UpdateTornado(float deltaTime)
-        {
-            orbitAngle += orbitSpeed * deltaTime;
-            if (orbitAngle > 360.0f)
-                orbitAngle -= 360.0f;
-
-            float rad = orbitAngle * (float)Math.PI / 180.0f;
-
-            tornadoCenterX = orbitCenterX + orbitRadius * (float)Math.Cos(rad);
-            tornadoCenterZ = orbitCenterZ + orbitRadius * (float)Math.Sin(rad);
-            tornadoCenterY = orbitCenterY; // высота постоянная
-
-            // Обновляем вращение самих частиц
-            for (int i = 0; i < tornadoParticles.Count; i++)
-            {
-                Particle p = tornadoParticles[i];
-                p.angle += p.speed * deltaTime;
-                if (p.angle > 360) p.angle -= 360;
-
-                p.height += 0.2f * deltaTime;
-                if (p.height > 3.0f) p.height = 0.0f;
-
-                tornadoParticles[i] = p;
-            }
-            // Проверка для кровати
-            if (!isBedJumping && Vector3.Distance(new Vector3(tornadoCenterX, tornadoCenterY, tornadoCenterZ), new Vector3(-3f, 0f, -2f)) < 1.5f)
-            {
-                isBedJumping = true;
-                bedJumpTime = 0f; // сброс времени прыжка
-            }
-
-            // Проверка для стола
-            if (!isTableJumping && Vector3.Distance(new Vector3(tornadoCenterX, tornadoCenterY, tornadoCenterZ), new Vector3(0f, 1.0f, 0f)) < 1.5f)
-            {
-                isTableJumping = true;
-                tableJumpTime = 0f; // сброс времени прыжка
-            }
-            Scene.UpdateBedJump();
-            Scene.UpdateTableJump();
-        }
-
-        // Обновление прыжка кровати
-        public static void UpdateBedJump()
-        {
-            if (isBedJumping)
-            {
-                bedJumpTime += jumpSpeed; // Например, 0.05f на кадр
-                bedJumpOffset = (float)(Math.Abs(Math.Sin(bedJumpTime)) * jumpHeight);
-
-                if (bedJumpTime >= Math.PI) // Прыжок один синус — от 0 до π
-                {
-                    isBedJumping = false;
-                    bedJumpOffset = 0f;
-                    bedJumpTime = 0f;
-                }
-            }
-        }
-
-        // Обновление прыжка стола, тарелки и стакана
-        public static void UpdateTableJump()
-        {
-            if (isTableJumping)
-            {
-                tableJumpTime += jumpSpeed; // Например, 0.05f на кадр
-                tableJumpOffset = (float)(Math.Abs(Math.Sin(tableJumpTime)) * jumpHeight);
-                plateJumpOffset = (float)(Math.Abs(Math.Sin(tableJumpTime * 1.1f)) * jumpHeight);
-                glassJumpOffset = (float)(Math.Abs(Math.Sin(tableJumpTime * 1.2f)) * jumpHeight);
-
-                if (tableJumpTime >= Math.PI) // Прыжок завершён
-                {
-                    isTableJumping = false;
-                    tableJumpOffset = 0f;
-                    plateJumpOffset = 0f;
-                    glassJumpOffset = 0f;
-                    tableJumpTime = 0f;
-                }
-            }
-        }
-
-        // Отрисовка частиц
-        public static void DrawTornado()
-        {
-            Gl.glPointSize(3);
-            Gl.glBegin(Gl.GL_POINTS);
-            Gl.glColor3f(0f, 0f, 0f);
-            foreach (var p in tornadoParticles)
-            {
-                float rad = p.angle * (float)Math.PI / 180.0f;
-                float x = tornadoCenterX + p.radius * (float)Math.Cos(rad);
-                float z = tornadoCenterZ + p.radius * (float)Math.Sin(rad);
-                Gl.glVertex3f(x, p.height, z);
-            }
-            Gl.glEnd();
-        }
+        
 
         private static void DisableTransparency()
         {
             Gl.glDisable(Gl.GL_BLEND);
             Gl.glEnable(Gl.GL_DEPTH_TEST);
         }
-        public struct Vector3
-        {
-            public float X, Y, Z;
-            public Vector3(float x, float y, float z) { X = x; Y = y; Z = z; }
-            public static float Distance(Vector3 v1, Vector3 v2)
-            {
-                return (float)Math.Sqrt(Math.Pow(v2.X - v1.X, 2) + Math.Pow(v2.Y - v1.Y, 2) + Math.Pow(v2.Z - v1.Z, 2));
-            }
-        }
+       
 
-        public static Vector3 GetTornadoPosition()
-        {
-            return new Vector3(tornadoCenterX, tornadoCenterY, tornadoCenterZ);
-        }
-        // Структура частицы
-        private struct Particle
-        {
-            public float angle; // угол вокруг центра
-            public float radius; // расстояние от центра
-            public float height; // высота
-            public float speed;  // скорость вращения
-        }
+       
     }
 }
