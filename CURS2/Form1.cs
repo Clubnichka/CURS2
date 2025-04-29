@@ -1,4 +1,5 @@
 ﻿// MainForm.cs
+using CURS2;
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -23,7 +24,7 @@ namespace KitchenSceneTao
         float womanX = 5f, womanZ = -3.5f, womanY = 0;
         float womanTargetX = 2f;
         float womanOffset = 0f;
-
+        bool embossEnabled = false;
         bool womanEntering = false;
         float womanStep = 0.02f; // Скорость входа
         Timer doorTimer = new Timer();
@@ -120,6 +121,10 @@ namespace KitchenSceneTao
             Scene.UpdateTornado(deltaTime);
             Scene.DrawTornado();
             Scene.DrawWoman(womanX);
+            if (Scene.embossEnabled)
+            {
+                Scene.ApplyEmbossFilterAsTexture(glControl.Width, glControl.Height);
+            }
             glControl.Invalidate();
         }
 
@@ -139,6 +144,11 @@ namespace KitchenSceneTao
             }
 
             glControl.Invalidate();
+        }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+            Scene.ToggleEmboss();
         }
 
         private void glControl_MouseDown(object sender, MouseEventArgs e)
