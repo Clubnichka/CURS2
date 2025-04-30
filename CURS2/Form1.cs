@@ -35,6 +35,7 @@ namespace KitchenSceneTao
         {
             InitializeComponent();
             InitializeOpenGLControl();
+            Textures.InitTextures();
             this.KeyPreview = true;
             this.KeyDown += Form1_KeyDown;
             glControl.MouseDown += glControl_MouseDown;
@@ -147,6 +148,11 @@ namespace KitchenSceneTao
         private void button1_Click(object sender, EventArgs e)
         {
             Filter.ToggleEmboss();
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
         }
 
         private void glControl_MouseDown(object sender, MouseEventArgs e)

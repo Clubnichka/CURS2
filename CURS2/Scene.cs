@@ -14,39 +14,53 @@ namespace KitchenSceneTao
 {
     public static class Scene
     {
-       
-        
-       
+
+
+
         public static void DrawRoom()
         {
+            Gl.glEnable(Gl.GL_TEXTURE_2D);
+            Gl.glColor3f(0.8f, 0.8f, 0.8f); // Цвет стены
+            // Пол
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.FloorTexture);
             Gl.glBegin(Gl.GL_QUADS);
-
-            // Floor (brown)
-            Gl.glColor3f(0.6f, 0.4f, 0.2f);
-            Gl.glVertex3f(-5, 0, -5);
-            Gl.glVertex3f(5, 0, -5);
-            Gl.glVertex3f(5, 0, 5);
-            Gl.glVertex3f(-5, 0, 5);
-
-            // Ceiling (light gray)
-            Gl.glColor3f(0.9f, 0.9f, 0.95f);
-            Gl.glVertex3f(-5, 3, -5);
-            Gl.glVertex3f(5, 3, -5);
-            Gl.glVertex3f(5, 3, 5);
-            Gl.glVertex3f(-5, 3, 5);
-
-            // Left wall (blueish)
-            Gl.glColor3f(0.8f, 0.8f, 0.8f);
-            DrawWall(-5, 0, -5, -5, 3, 5);
-
-            // Back wall (blueish)
-            Gl.glColor3f(0.8f, 0.8f, 0.8f);
-            DrawWall(-5, 0, -5, 5, 3, -5);
-
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(-5, 0, -5);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(5, 0, -5);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(5, 0, 5);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(-5, 0, 5);
             Gl.glEnd();
-            DrawRightWallWithDoor();
 
-            
+            // Потолок
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.CeilingTexture);
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(-5, 3, -5);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(5, 3, -5);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(5, 3, 5);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(-5, 3, 5);
+            Gl.glEnd();
+
+            // Левая стена
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.WallTexture);
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(-5, 0, -5);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(-5, 0, 5);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(-5, 3, 5);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(-5, 3, -5);
+            Gl.glEnd();
+
+            // Задняя стена
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.WallTexture);
+            Gl.glBegin(Gl.GL_QUADS);
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(-5, 0, -5);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(5, 0, -5);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(5, 3, -5);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(-5, 3, -5);
+            Gl.glEnd();
+
+            Gl.glDisable(Gl.GL_TEXTURE_2D);
+
+            // Правая стена с дверью рисуется отдельно
+            DrawRightWallWithDoor();
         }
 
         public static void DrawWoman(float offset)
@@ -155,22 +169,7 @@ namespace KitchenSceneTao
             Gl.glPopMatrix();
         }
 
-        private static void DrawFractalTree(float x, float y, float length, float angle, int depth)
-        {
-            if (depth == 0) return;
-
-            float rad = angle * (float)Math.PI / 180;
-            float x2 = x + (float)Math.Cos(rad) * length;
-            float y2 = y + (float)Math.Sin(rad) * length;
-
-            Gl.glBegin(Gl.GL_LINES);
-            Gl.glVertex3f(x, y, 0);
-            Gl.glVertex3f(x2, y2, 0);
-            Gl.glEnd();
-
-            DrawFractalTree(x2, y2, length * 0.7f, angle - 30, depth - 1);
-            DrawFractalTree(x2, y2, length * 0.7f, angle + 30, depth - 1);
-        }
+        
         public static void DrawGlass()
         {
             Gl.glPushMatrix();
@@ -453,32 +452,36 @@ namespace KitchenSceneTao
             float doorWidth = 1f;
             float doorBottom = 0f;
             float doorZ = -3.5f; // Смещение по Z
-
+            Gl.glEnable(Gl.GL_TEXTURE_2D);
             Gl.glColor3f(0.8f, 0.8f, 0.8f); // Цвет стены
 
             // Левая часть стены
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.WallTexture);
             Gl.glBegin(Gl.GL_QUADS);
-            Gl.glVertex3f(wallX, 0, -5);
-            Gl.glVertex3f(wallX, wallHeight, -5);
-            Gl.glVertex3f(wallX, wallHeight, doorZ);
-            Gl.glVertex3f(wallX, 0, doorZ);
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(wallX, 0, -5);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(wallX, wallHeight, -5);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(wallX, wallHeight, doorZ);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(wallX, 0, doorZ);
             Gl.glEnd();
 
             // Правая часть стены
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.WallTexture);
             Gl.glBegin(Gl.GL_QUADS);
-            Gl.glVertex3f(wallX, 0, doorZ + doorWidth);
-            Gl.glVertex3f(wallX, wallHeight, doorZ + doorWidth);
-            Gl.glVertex3f(wallX, wallHeight, 5);
-            Gl.glVertex3f(wallX, 0, 5);
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(wallX, 0, doorZ + doorWidth);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(wallX, wallHeight, doorZ + doorWidth);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(wallX, wallHeight, 5);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(wallX, 0, 5);
             Gl.glEnd();
 
             // Верхняя часть над дверью (полная перемычка)
+            Gl.glBindTexture(Gl.GL_TEXTURE_2D, Textures.WallTexture);
             Gl.glBegin(Gl.GL_QUADS);
-            Gl.glVertex3f(wallX, doorHeight, doorZ);
-            Gl.glVertex3f(wallX, wallHeight, doorZ);
-            Gl.glVertex3f(wallX, wallHeight, doorZ + doorWidth);
-            Gl.glVertex3f(wallX, doorHeight, doorZ + doorWidth);
+            Gl.glTexCoord2f(0, 0); Gl.glVertex3f(wallX, doorHeight, doorZ);
+            Gl.glTexCoord2f(1, 0); Gl.glVertex3f(wallX, wallHeight, doorZ);
+            Gl.glTexCoord2f(1, 1); Gl.glVertex3f(wallX, wallHeight, doorZ + doorWidth);
+            Gl.glTexCoord2f(0, 1); Gl.glVertex3f(wallX, doorHeight, doorZ + doorWidth);
             Gl.glEnd();
+            Gl.glDisable(Gl.GL_TEXTURE_2D);
         }
 
         // Дверь
